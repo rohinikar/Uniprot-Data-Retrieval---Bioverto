@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+   
+<div id="container">
+<div id="top_div">
+<div class="heading"> 
+</head>
+<body>
+
+<h2>Protein Information:</h2>
+<input id="myInput"></input>
+<button type="button" onclick="loadXMLDoc()">Get Protein Information</button>
+
+<hr>
+  <p class="active-tab"><strong>Active Tab</strong>: <span></span></p>
+  <p class="previous-tab"><strong>Previous Tab</strong>: <span></span></p>
+
+   <hr>
+   <h4>
+   <ul id="myTab" class="nav nav-pills">
+   <li class="active"><a href="#name" data-toggle="tab">
+      Protein fullname </a></li>
+   <li ><a href="#sequence" data-toggle="tab"> Structure of Protein</a></li>
+   <li ><a href="#papers" data-toggle="tab"> Publications </a></li>
+   <li ><a href="#function" data-toggle="tab"> Function of Protein </a></li>
+   </ul>
+   </h4>
+</div>
+</div>
+</div>
+<br>
+<div id="myTabContent" class="tab-content">
+   <div class="tab-pane fade in active" id="name">
+   </div>
+   <div class="tab-pane fade" id="sequence">
+   </div>
+   <div class="tab-pane fade" id="papers">
+   </div>
+   <div class="tab-pane fade" id="function">
+   </div>
+</div>
+<br>
+<script>
+  $(function(){
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      // Get the name of active tab
+      var activeTab = $(e.target).text(); 
+      // Get the name of previous tab
+      var previousTab = $(e.relatedTarget).text(); 
+      $(".active-tab span").html(activeTab);
+      $(".previous-tab span").html(previousTab);
+   });
+}); 
+</script>
+
+<script>
+function loadXMLDoc()
+{
+xmlhttp=null;
+if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+else
+  {// code for IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+if (xmlhttp!=null)
+  {
+  xmlhttp.onreadystatechange=function()
+    {
+    if (xmlhttp.readyState==4 && xmlhttp.status==200)
+      {
+      xmlDoc=xmlhttp.responseXML;
+      var txt= "<b>" + xmlDoc.getElementsByTagName("fullName")[0].innerHTML + "</b>";
+	  document.getElementById("name").innerHTML=txt;	
+		//For publication information
+		var txt1="";
+		x=xmlDoc.getElementsByTagName("citation");
+        for (i=0;i<x.length;i++)
+        {
+		y=x[i].childNodes;
+		for (j=0;j<y.length;j++)
+		{
+		if(y[j].nodeName == "title")
+		{
+		txt1=txt1 + [i+1] + ". " + "<b>Title of Paper: </b>" + y[j].innerHTML + "<br>";
+		txt1=txt1 + "<b>Date : </b>" + x[i].getAttribute("date") + "<br>";
+		txt1=txt1 + "<b>Type : </b>" + x[i].getAttribute("type") + "<br>";
+		}
+		if(y[j].nodeName == "authorList")
+		{
+		z=y[j].childNodes;
+		txt1=txt1 + "<b>Authors : </b>";
+		for(k=0;k<z.length;k++)
+		{
+		if(z[k].nodeName == "person")
+		{
+		txt1=txt1 + z[k].getAttribute("name") + ";";
+		}
+		}
+		}
+		if(y[j].nodeName == "dbReference")
+		{
+		if(y[j].getAttribute("type") == "PubMed")
+		{
+		var idvalue = y[j].getAttribute("id");
+        txt1=txt1 + "<br>" + y[j].getAttribute("type") + ":" + idvalue.link("http://www.ncbi.nlm.nih.gov/pubmed/"+idvalue) +"<br>";
+		}
+		else
+		txt1=txt1 + y[j].getAttribute("type") + ":" + y[j].getAttribute("id") +"<br>";
+		}
+		}
+		txt1=txt1+ "<br><br>";
+        }
+        document.getElementById("papers").innerHTML=txt1;		
+		
+		//for sequence and structure
+        x=xmlDoc.getElementsByTagName("sequence");
+		for (i=0;i<x.length;i++) {
+		var txt2 =  "<b> Primary Structure : </b>" + x[i].innerHTML + "<br> <br> <b> Length of sequence: </b> " + x[i].getAttribute("length") + "<br>" ;
+		}
+		p = xmlDoc.getElementsByTagName("dbReference");
+		for ( f=0; f<p.length; f++)
+		{
+		if(p[f].getAttribute("type") == "PDB")
+		{
+		var idval = p[f].getAttribute("id");
+        txt2=txt2 + "<br>" + "<b> For more structure information & 3D view : </b>"+ p[f].getAttribute("type") + ":" + idval.link("http://www.pdb.org/pdb/explore/explore.do?pdbId="+idval) +"<br>";
+		break;
+		}
+		}
+		document.getElementById("sequence").innerHTML=txt2;
+        
+		//for function
+		x=xmlDoc.getElementsByTagName("comment");
+	    var txt3="";
+		var pid=document.getElementById("myInput").value;
+        for (i=0;i<x.length;i++)
+        {
+		 if( x[i].getAttribute("type") == "function")
+		   txt3 = txt3 + "<b> Functions: </b> " + x[i].innerHTML + "<br>";
+	    }
+		txt3 = txt3 + "<br> <b> For complete GO annotation </b> : " + pid.link("http://www.ebi.ac.uk/QuickGO/GProtein?ac="+pid) + "<br>";  
+		document.getElementById("function").innerHTML=txt3;
+		}
+      }
+  xmlhttp.open("GET","http://www.uniprot.org/uniprot/"+document.getElementById("myInput").value+".xml",true);
+  xmlhttp.send();
+  }
+else
+  {
+  alert("Your browser does not support XMLHTTP.");
+  }
+}
+
+</script>
+</body>
+</html>
+
